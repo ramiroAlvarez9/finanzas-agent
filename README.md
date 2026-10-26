@@ -23,6 +23,7 @@ Agente de Telegram para gestionar gastos personales, construido con [eve](https:
 - Un bot de Telegram.
 - Una API key de OpenRouter.
 - Una API key de AssemblyAI para el modo voz.
+- Un `ACCESS_CODE` para que el bot sea privado.
 
 ## Desarrollo
 

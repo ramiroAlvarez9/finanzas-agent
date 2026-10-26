@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  esbuild: true
+ignoredOptionalDependencies:
+  - "@mongodb-js/zstd"
+  - node-liblzma

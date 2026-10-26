@@ -1,0 +1,33 @@
+services:
+  agent:
+    build:
+      context: .
+      args:
+        ACCESS_CODE: ${ACCESS_CODE}
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./workflow-data:/app/.eve/.workflow-data
+      - ./sandbox-data:/app/.eve/sandbox-cache/just-bash/sessions
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    environment:
+      - DOMAIN=${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - agent
+
+volumes:
+  caddy_data:
+  caddy_config:

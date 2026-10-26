@@ -210,6 +210,31 @@ test("elimina de forma lógica y saca el gasto de los totales", async () => {
   assert.equal(again?.already_deleted, true);
 });
 
+test("ordena por fecha del gasto o por último anotado", async () => {
+  await addExpense(
+    "sort-user",
+    100_000,
+    "ARS",
+    "otros",
+    "Reciente por fecha",
+    "2026-10-25",
+  );
+  await addExpense(
+    "sort-user",
+    200_000,
+    "ARS",
+    "otros",
+    "Anotado último pero viejo",
+    "2026-10-01",
+  );
+
+  const byDate = await listExpenses("sort-user", { sort: "date" });
+  assert.equal(byDate[0].description, "Reciente por fecha");
+
+  const byRecent = await listExpenses("sort-user", { sort: "recent" });
+  assert.equal(byRecent[0].description, "Anotado último pero viejo");
+});
+
 test("no deja eliminar gastos de otro usuario", async () => {
   const { expense } = await addExpense(
     "isolation-b",

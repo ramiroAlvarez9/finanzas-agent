@@ -109,7 +109,7 @@ Asegurate de tener un volumen persistente para `./data` y de registrar el webhoo
 agent/
   agent.ts                 modelo y configuración del agente
   instructions.md          identidad y reglas del asistente
-  channels/telegram.ts     Telegram, voz, fotos y tarjetas de confirmación
+  channels/telegram.ts     Telegram, voz, rechazo de fotos y tarjetas de confirmación
   lib/
     categories.ts          catálogo de categorías
     db.ts                  SQLite, usuarios, gastos y reportes

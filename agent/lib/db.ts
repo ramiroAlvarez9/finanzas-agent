@@ -113,6 +113,7 @@ export interface ExpenseFilters {
   dateFrom?: string;
   dateTo?: string;
   limit?: number;
+  sort?: "date" | "recent";
 }
 
 export interface SpendingFilters {
@@ -390,12 +391,14 @@ export async function listExpenses(
   }
 
   const limit = Math.min(Math.max(filters.limit ?? 10, 1), 50);
+  const orderBy =
+    filters.sort === "recent" ? "id DESC" : "spent_on DESC, id DESC";
   const rs = await getClient().execute({
     sql: `SELECT id, user_id, amount_minor, currency, category_slug, description,
                  spent_on, created_at, updated_at, deleted_at
           FROM expenses
           WHERE ${where.join(" AND ")}
-          ORDER BY spent_on DESC, id DESC
+          ORDER BY ${orderBy}
           LIMIT ?`,
     args: [...args, limit],
   });

@@ -14,10 +14,6 @@ export interface DateRange {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-function pad(value: number): string {
-  return String(value).padStart(2, "0");
-}
-
 function toUtcDate(iso: string): Date {
   return new Date(`${iso}T00:00:00.000Z`);
 }
@@ -147,15 +143,3 @@ export function getCustomRange(from: string, to: string): DateRange {
   };
 }
 
-export function formatIsoDateParts(iso: string): {
-  year: number;
-  month: number;
-  day: number;
-} {
-  const [year, month, day] = iso.split("-").map(Number);
-  return { year, month, day };
-}
-
-export function isoDate(year: number, month: number, day: number): string {
-  return `${year}-${pad(month)}-${pad(day)}`;
-}

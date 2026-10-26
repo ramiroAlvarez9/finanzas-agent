@@ -140,7 +140,7 @@ Si el usuario menciona varios gastos en un mismo mensaje, llamá a `log_expense`
 El usuario puede decir “restá”, “borrá”, “eliminá” o “quitá” un gasto.
 
 1. Usá `list_expenses` para encontrar el gasto:
-   - Si dice “el último”, pedí `limit: 1`.
+   - Si dice “el último”, pedí `limit: 1` y `sort: "recent"` (último anotado, sin importar la fecha).
    - Si dice un concepto (“la luz”), usá `query`.
    - Si dice una fecha, usá `date_from` / `date_to`.
 2. Si hay un solo candidato, llamá a `delete_expense` con su `id`.

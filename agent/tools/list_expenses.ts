@@ -10,7 +10,7 @@ import { resolveUserId } from "../lib/session";
 
 export default defineTool({
   description:
-    "Lista los gastos del usuario, del más reciente al más viejo. Usalo para consultar movimientos o para encontrar el gasto que el usuario quiere eliminar. Devuelve IDs que después se usan en delete_expense.",
+    "Lista los gastos del usuario. Por defecto ordena por fecha del gasto, del más reciente al más viejo; con sort:'recent' ordena por último anotado. Usalo para consultar movimientos o para encontrar el gasto que el usuario quiere eliminar. Devuelve IDs que después se usan en delete_expense.",
   inputSchema: z.object({
     query: z
       .string()
@@ -46,6 +46,12 @@ export default defineTool({
       .max(50)
       .default(10)
       .describe("Cantidad máxima de gastos a devolver."),
+    sort: z
+      .enum(["date", "recent"])
+      .default("date")
+      .describe(
+        "Orden: 'date' por fecha del gasto (descendente) o 'recent' por último anotado. Para 'el último gasto' usá 'recent'.",
+      ),
   }),
   async execute(input, ctx) {
     const userId = resolveUserId(ctx);
@@ -79,6 +85,7 @@ export default defineTool({
       dateFrom: input.date_from,
       dateTo: input.date_to,
       limit: input.limit,
+      sort: input.sort,
     });
 
     return {

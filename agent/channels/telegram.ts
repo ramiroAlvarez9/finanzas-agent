@@ -7,9 +7,8 @@ import {
   type TelegramMessage,
 } from "eve/channels/telegram";
 import {
-  buildApprovalMessage,
-  CANCEL_OPTION_LABEL,
-  CONFIRM_OPTION_LABEL,
+  APPROVAL_OPTIONS,
+  buildApprovalCard,
 } from "../lib/approval-message";
 import { DEFAULT_TIMEZONE, getUserToday } from "../lib/date";
 import {
@@ -155,17 +154,13 @@ export default telegramChannel({
             }
           }
 
-          const customText = buildApprovalMessage(toolName, request.action.input, {
+          const card = buildApprovalCard(toolName, request.action.input, {
             today,
             defaultCurrency: user?.default_currency ?? DEFAULT_CURRENCY,
             expense,
           });
-          if (customText) text = customText;
-
-          options = [
-            { id: "approve", label: CONFIRM_OPTION_LABEL },
-            { id: "cancel", label: CANCEL_OPTION_LABEL },
-          ];
+          if (card) text = card.text;
+          options = [...APPROVAL_OPTIONS];
         }
 
         const customRequest = { ...request, prompt: text, options };

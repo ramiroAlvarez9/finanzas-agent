@@ -20,11 +20,19 @@ Agente de Telegram para gestionar gastos personales, construido con [eve](https:
 
 - Node.js 24.
 - pnpm 11.
-- Una bot de Telegram.
+- Un bot de Telegram.
 - Una API key de OpenRouter.
 - Una API key de AssemblyAI para el modo voz.
 
 ## Desarrollo
+
+Si usás nvm:
+
+```bash
+nvm use
+```
+
+Después:
 
 ```bash
 pnpm install

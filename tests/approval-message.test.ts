@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import {
+  buildApprovalCard,
   buildApprovalMessage,
   CANCEL_OPTION_LABEL,
   CONFIRM_OPTION_LABEL,
@@ -96,4 +97,28 @@ test("devuelve null para herramientas sin tarjeta personalizada", () => {
   );
   assert.equal(CONFIRM_OPTION_LABEL, "✅ Confirmar");
   assert.equal(CANCEL_OPTION_LABEL, "❌ Cancelar");
+});
+
+test("la tarjeta incluye los botones de confirmar y cancelar", () => {
+  const card = buildApprovalCard(
+    "log_expense",
+    {
+      description: "Almuerzo",
+      amount: 12500,
+      currency: "ARS",
+      category: "comida",
+    },
+    { today, defaultCurrency: "ARS" },
+  );
+
+  assert.ok(card);
+  assert.match(card.text, /Voy a anotar este gasto/);
+  assert.deepEqual(
+    card.options.map((option) => option.label),
+    ["✅ Confirmar", "❌ Cancelar"],
+  );
+  assert.deepEqual(
+    card.options.map((option) => option.id),
+    ["approve", "cancel"],
+  );
 });

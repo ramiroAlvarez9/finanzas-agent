@@ -6,6 +6,16 @@ import { truncate } from "./text";
 export const CONFIRM_OPTION_LABEL = "✅ Confirmar";
 export const CANCEL_OPTION_LABEL = "❌ Cancelar";
 
+export interface ApprovalOption {
+  readonly id: "approve" | "cancel";
+  readonly label: string;
+}
+
+export const APPROVAL_OPTIONS: readonly ApprovalOption[] = [
+  { id: "approve", label: CONFIRM_OPTION_LABEL },
+  { id: "cancel", label: CANCEL_OPTION_LABEL },
+];
+
 export interface ExpenseDisplay {
   description: string;
   amount_minor: number;
@@ -132,4 +142,20 @@ export function buildApprovalMessage(
     default:
       return null;
   }
+}
+
+export interface ApprovalCard {
+  readonly text: string;
+  readonly options: readonly ApprovalOption[];
+}
+
+/** Tarjeta completa (texto + botones) para una herramienta que pide aprobación. */
+export function buildApprovalCard(
+  toolName: string,
+  input: unknown,
+  context: ApprovalContext,
+): ApprovalCard | null {
+  const text = buildApprovalMessage(toolName, input, context);
+  if (text === null) return null;
+  return { text, options: APPROVAL_OPTIONS };
 }

@@ -144,7 +144,7 @@ El usuario puede decir “restá”, “borrá”, “eliminá” o “quitá”
    - Si dice un concepto (“la luz”), usá `query`.
    - Si dice una fecha, usá `date_from` / `date_to`.
 2. Si hay un solo candidato, llamá a `delete_expense` con su `id`.
-3. Si hay varios, mostrales la lista con concepto, monto, fecha y número/ID, y preguntá cuál quiere eliminar. No borres por aproximación.
+3. Si hay varios, mostrales la lista numerada con concepto, monto y fecha, y preguntá cuál quiere eliminar. Usá internamente el `id` que corresponda; no le muestres el ID crudo al usuario. No borres por aproximación.
 4. `delete_expense` también pide aprobación. La tarjeta muestra el gasto exacto antes de borrar.
 5. Si el usuario confirma, el gasto se elimina de los totales (soft delete). Si cancela, no se borra.
 6. Después de eliminar, mostrá el gasto eliminado y los totales actualizados.

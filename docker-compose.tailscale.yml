@@ -1,0 +1,17 @@
+# Override para exponer el agente por Tailscale Funnel.
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.tailscale.yml up -d
+#   sudo tailscale funnel --bg 3000
+#
+# El agente queda escuchando en 127.0.0.1:3000 y Caddy no se levanta.
+# Tailscale Funnel se encarga del HTTPS público.
+
+services:
+  agent:
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  caddy:
+    profiles:
+      - caddy

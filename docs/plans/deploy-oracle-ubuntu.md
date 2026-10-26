@@ -17,7 +17,7 @@ En OCI:
 
 1. Compute → Instances → Create Instance.
 2. Imagen: **Ubuntu 22.04** o **24.04**.
-3. Shape: Ampere A1 (ARM) o AMD. Para compilar la imagen de Docker, mejor **2 GB de RAM** o más. Si usás la instancia AMD micro gratuita de 1 GB, agregá swap (ver sección 9).
+3. Shape: Ampere A1 (ARM) o AMD. Para compilar la imagen de Docker, mejor **2 GB de RAM** o más. Si usás la instancia AMD micro gratuita de 1 GB, agregá swap (ver sección 10).
 4. Asigná una **reserved public IP** para que la IP no cambie.
 5. Guardá la clave SSH (`~/.ssh/oracle_key` o similar).
 
@@ -26,6 +26,14 @@ Conectate:
 ```bash
 ssh -i ~/.ssh/oracle_key ubuntu@<PUBLIC_IP>
 ```
+
+Si ya usás Tailscale para entrar, instalalo y conectate por MagicDNS o por la IP `100.x`:
+
+```bash
+ssh ubuntu@<tailscale-hostname>
+```
+
+En ese caso podés cerrar el puerto 22 público. Está explicado en la sección 5.
 
 ---
 
@@ -48,6 +56,8 @@ Agregá estas **Ingress Rules**:
 | Tu IP /32 | TCP | `22` | SSH (mejor restringido) |
 
 Si usás **Network Security Groups (NSG)** en vez de Security List, agregá las mismas reglas al NSG asociado a la instancia.
+
+> Si entrás por **Tailscale SSH**, podés omitir la regla pública de 22 y cerrar ese puerto. Tailscale no necesita que 22 esté abierto a Internet. Probá la conexión por Tailscale antes de cerrarlo.
 
 Si tu instancia tiene IPv6, agregá también `::/0` para 80 y 443.
 
@@ -136,7 +146,117 @@ Caddy obtiene el certificado igual, siempre que los puertos 80/443 estén abiert
 
 ---
 
-## 5. Instalar y desplegar
+## 5. Acceso por Tailscale
+
+Si ya administrás la instancia por Tailscale, hay dos formas de usarlo. No son excluyentes.
+
+> **Importante:** Tailscale para SSH **no reemplaza** los puertos 80/443 públicos si querés usar un dominio propio con Caddy. Telegram tiene que llegar al webhook desde Internet. Si querés evitar abrir 80/443, usá la opción B (Tailscale Funnel).
+
+### Opción A (recomendada): Tailscale para SSH + Caddy público
+
+Tailscale se usa solo para entrar a la instancia. El webhook sigue saliendo por tu dominio y Caddy.
+
+1. Instalá Tailscale en el servidor:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up --ssh
+tailscale status
+tailscale ip -4
+```
+
+`--ssh` habilita Tailscale SSH. Si preferís SSH normal sobre la IP de Tailscale, alcanza con `tailscale up` y dejar `sshd` escuchando en 22; Tailscale te da la conectividad.
+
+2. Desde tu máquina:
+
+```bash
+ssh ubuntu@<tailscale-hostname>
+# o
+ssh ubuntu@100.x.y.z
+```
+
+3. En OCI podés **cerrar el puerto 22 público** (o restringirlo a tu IP) y dejar solo 80/443.
+
+> **No te bloquees afuera:** probá primero que `ssh ubuntu@<tailscale-hostname>` funcione y recién después cerrá el 22 público en OCI.
+
+Si usás Tailscale SSH, el tráfico entra por la interfaz `tailscale0`; no hace falta abrir 22 en iptables para la IP pública. Si querés permitir SSH normal sobre Tailscale, agregá:
+
+```bash
+sudo iptables -I INPUT 1 -i tailscale0 -p tcp --dport 22 -j ACCEPT
+sudo netfilter-persistent save
+```
+
+Usamos `-I INPUT 1` para que la regla quede antes del `REJECT` final.
+
+Tailscale usa conexiones salientes UDP 41641 y, si no hay conexión directa, relay DERP. No necesitás abrir puertos de entrada para que funcione. Si querés conexiones directas, podés abrir UDP 41641 en OCI (opcional).
+
+4. Seguí con el deploy normal (sección 6) usando `DOMAIN` + Caddy.
+
+### Opción B: Tailscale Funnel, sin abrir 80/443
+
+Funnel expone un servicio local a Internet con una URL `https://<host>.<tailnet>.ts.net`. Sirve para que Telegram llegue al webhook sin abrir 80/443 ni usar Caddy.
+
+Requisitos:
+
+- Tailscale v1.38.3 o superior.
+- MagicDNS y HTTPS habilitados en el tailnet.
+- Funnel habilitado en el tailnet. La CLI te guía; también se puede agregar el node attribute `funnel` en Access Controls.
+- Funnel es público, está en beta y tiene límites de ancho de banda no configurables. Para un bot personal alcanza.
+- Funnel solo puede usar los puertos públicos `443`, `8443` y `10000`; el target local puede ser `3000`.
+
+Pasos:
+
+1. Instalá Tailscale y habilitá Funnel:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+sudo tailscale funnel --bg 3000
+```
+
+La primera vez te va a pedir aprobar Funnel y habilitar HTTPS/MagicDNS. `--bg` deja Funnel corriendo en background y se reanuda después de un reboot. Al final te muestra la URL pública, por ejemplo:
+
+```text
+https://oracle-finanzas.tailxxxx.ts.net
+```
+
+Verificá:
+
+```bash
+tailscale funnel status
+tailscale status
+```
+
+2. Desplegá el agente sin Caddy y con el puerto 3000 publicado solo en localhost:
+
+```bash
+cd /opt/finanzas-agent
+sudo docker compose -f docker-compose.yml -f docker-compose.tailscale.yml up -d --build
+```
+
+El override `docker-compose.tailscale.yml` publica `127.0.0.1:3000:3000` y deja el servicio `caddy` fuera de perfil. No uses el script `setup-vps-ubuntu.sh` en este modo, porque levanta Caddy.
+
+3. Registrá el webhook con la URL de Funnel:
+
+```bash
+PUBLIC_URL="https://oracle-finanzas.tailxxxx.ts.net"
+
+curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url":"'"$PUBLIC_URL"'/eve/v1/telegram",
+    "secret_token":"'"$TELEGRAM_WEBHOOK_SECRET_TOKEN"'",
+    "allowed_updates":["message","callback_query"]
+  }'
+```
+
+4. En `.env`, `DOMAIN` no lo usa Caddy en este modo. Podés dejarlo con el hostname de Funnel o vacío; el webhook se registra con `PUBLIC_URL`.
+
+5. En OCI podés cerrar 80/443 y 22. Solo necesitás salida a Internet para Tailscale y Telegram. El puerto 3000 no se expone a Internet: escucha en `127.0.0.1` y Funnel lo proxya.
+
+> Funnel es público: cualquiera que conozca la URL puede llegar al webhook. EVE valida el `secret_token` de Telegram y el bot sigue protegido por `ACCESS_CODE`. La URL de Funnel no puede ser un dominio propio; siempre es `*.ts.net`. Si querés `finanzas.tudominio.com`, usá la opción A.
+
+## 6. Instalar y desplegar
 
 En la instancia:
 
@@ -215,7 +335,7 @@ curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 
 ---
 
-## 6. Verificar
+## 7. Verificar
 
 ```bash
 cd /opt/finanzas-agent
@@ -251,7 +371,7 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo"
 
 ---
 
-## 7. Actualizar la app
+## 8. Actualizar la app
 
 ```bash
 cd /opt/finanzas-agent
@@ -263,7 +383,7 @@ El entrypoint detecta cambios en `agent/` y resetea el estado de sesión, pero *
 
 ---
 
-## 8. Backups
+## 9. Backups
 
 Para una copia consistente de SQLite, parar el agente unos segundos:
 
@@ -288,7 +408,7 @@ Podés programar el backup con cron, pero asegurate de que el usuario que lo eje
 
 ---
 
-## 9. Si la instancia tiene poca RAM
+## 10. Si la instancia tiene poca RAM
 
 La compilación de la imagen puede quedarse sin memoria en la instancia AMD micro de 1 GB. Agregá swap:
 
@@ -309,7 +429,7 @@ sudo docker compose up -d --build
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 ### Caddy no obtiene el certificado
 
@@ -356,7 +476,7 @@ sudo docker compose logs -f agent
 
 ---
 
-## 11. Checklist de seguridad
+## 12. Checklist de seguridad
 
 - [ ] SSH (22) restringido a tu IP en OCI.
 - [ ] `ACCESS_CODE` largo y secreto.
@@ -368,7 +488,7 @@ sudo docker compose logs -f agent
 
 ---
 
-## 12. Si ya tenés otro Caddy en el mismo servidor
+## 13. Si ya tenés otro Caddy en el mismo servidor
 
 Este repo trae su propio servicio `caddy`, que ocupa 80/443. Si en la misma instancia ya corre otro Caddy:
 

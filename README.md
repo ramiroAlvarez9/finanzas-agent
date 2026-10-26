@@ -126,6 +126,11 @@ docs/plans/deploy-oracle-ubuntu.md
 
 Incluye los dos firewalls de OCI (Security List/NSG), las reglas de iptables de las imágenes Ubuntu de Oracle, DNS, deploy, backups y troubleshooting.
 
+Si administrás el servidor por **Tailscale**, la guía cubre los dos modos:
+
+- **Tailscale SSH + Caddy público**: entrás por Tailscale y el webhook sale por tu dominio con 80/443.
+- **Tailscale Funnel**: no abrís 80/443; Tailscale expone el agente en `https://<host>.<tailnet>.ts.net`. Usa `docker-compose.tailscale.yml` y `tailscale funnel --bg 3000`.
+
 > Si ya tenés otro Caddy usando los puertos 80/443 en el mismo servidor, no levantes el servicio `caddy` de este compose. Agregá el subdominio al Caddy existente y conectá el contenedor a la misma red.
 
 > SQLite necesita un filesystem persistente. Vercel serverless no es una buena opción para esta app; si querés usar Vercel, usá Turso (libSQL) o Postgres.

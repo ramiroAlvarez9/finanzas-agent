@@ -49,7 +49,8 @@ Antes de dar un cambio por terminado, correr como mínimo `pnpm typecheck` y `pn
 - El webhook de Telegram debe incluir `allowed_updates: ["message", "callback_query"]`; sin `callback_query` no funcionan los botones.
 - SQLite necesita filesystem persistente. Vercel serverless no es apto para esta app; usar VPS con volumen o Turso.
 - El deploy de VPS está documentado en `docs/plans/setup-vps-ubuntu.sh`.
-- Para Oracle Cloud con Ubuntu, la guía completa está en `docs/plans/deploy-oracle-ubuntu.md` (Security List/NSG, iptables, DNS y backups).
+- Para Oracle Cloud con Ubuntu, la guía completa está en `docs/plans/deploy-oracle-ubuntu.md` (Security List/NSG, iptables, DNS, Tailscale SSH/Funnel y backups).
+- Si se usa Tailscale Funnel, no levantar Caddy: `docker compose -f docker-compose.yml -f docker-compose.tailscale.yml up -d` y `tailscale funnel --bg 3000`.
 - Si se cambia el esquema o el contrato de una tool, actualizar tests, `README.md` y estas notas.
 
 ## Read the docs before writing code

@@ -155,6 +155,17 @@ test("get_spending_summary separa monedas y calcula porcentajes", async () => {
   assert.ok(summary.by_category.USD.length >= 1);
 });
 
+test("get_spending_summary usa month por defecto", async () => {
+  const summary = (await getSpendingSummary.execute(
+    {},
+    ctxFor("tools-user", "call-summary-default"),
+  )) as Record<string, any>;
+
+  assert.equal(summary.period, "month");
+  assert.ok(summary.period_label.length > 0);
+  assert.ok(Array.isArray(summary.totals));
+});
+
 test("delete_expense borra y saca el gasto del resumen", async () => {
   const created = (await logExpense.execute(
     {

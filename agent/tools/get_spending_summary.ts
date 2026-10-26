@@ -65,6 +65,8 @@ export default defineTool({
     const user = await getOrCreateUser(userId);
     const today = getUserToday(user.timezone);
 
+    const period = input.period ?? "month";
+
     let currency: string | undefined;
     if (input.currency) {
       const normalized = normalizeCurrencyCode(input.currency);
@@ -77,7 +79,7 @@ export default defineTool({
     }
 
     let range: DateRange;
-    if (input.period === "custom") {
+    if (period === "custom") {
       if (!input.date_from || !input.date_to) {
         return {
           error:
@@ -99,7 +101,7 @@ export default defineTool({
         };
       }
     } else {
-      range = getPeriodRange(input.period, today);
+      range = getPeriodRange(period, today);
     }
 
     const summary = await getSpendingSummary(
@@ -114,7 +116,7 @@ export default defineTool({
     );
 
     return {
-      period: input.period,
+      period,
       period_label: range.label,
       ...formatSummary(summary, today),
     };

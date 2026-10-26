@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Bootstrap/deploy script for an Ubuntu VPS running this agent with Docker.
+# Bootstrap/deploy script for an Ubuntu VPS running the finanzas agent with Docker.
 # Run from the repository root as a user with sudo access:
 #   bash docs/plans/setup-vps-ubuntu.sh
 #
 # The script does not create or print secrets. Put real values in .env before
 # starting the stack. It is safe to run again when the VPS needs an update.
 
-APP_DIR="${APP_DIR:-/opt/calorito}"
+APP_DIR="${APP_DIR:-/opt/finanzas-agent}"
 REPO_URL="${REPO_URL:-}"
 BRANCH="${BRANCH:-main}"
 
@@ -61,7 +61,7 @@ install_docker() {
 
 prepare_app() {
   if [[ ! -d "$APP_DIR/.git" ]]; then
-    [[ -n "$REPO_URL" ]] || die "Definí REPO_URL para clonar el repositorio, por ejemplo REPO_URL=https://github.com/org/repo.git."
+    [[ -n "$REPO_URL" ]] || die "Definí REPO_URL para clonar el repositorio, por ejemplo REPO_URL=https://github.com/org/finanzas-agent.git."
     log "Clonando el repositorio en $APP_DIR."
     $SUDO mkdir -p "$(dirname "$APP_DIR")"
     $SUDO git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
@@ -72,7 +72,7 @@ prepare_app() {
     $SUDO git -C "$APP_DIR" pull --ff-only origin "$BRANCH"
   fi
 
-  $SUDO mkdir -p "$APP_DIR/data" "$APP_DIR/workflow-data"
+  $SUDO mkdir -p "$APP_DIR/data" "$APP_DIR/workflow-data" "$APP_DIR/sandbox-data"
   $SUDO chown -R "${SUDO_USER:-$USER}:${SUDO_USER:-$USER}" "$APP_DIR" || true
 }
 
@@ -85,7 +85,7 @@ ensure_env() {
   fi
 
   local missing=()
-  for key in OPENROUTER_API_KEY TELEGRAM_BOT_TOKEN TELEGRAM_BOT_USERNAME TELEGRAM_WEBHOOK_SECRET_TOKEN DOMAIN; do
+  for key in OPENROUTER_API_KEY TELEGRAM_BOT_TOKEN TELEGRAM_BOT_USERNAME TELEGRAM_WEBHOOK_SECRET_TOKEN ACCESS_CODE ASSEMBLYAI_API_KEY DOMAIN; do
     if ! $SUDO grep -Eq "^${key}=[^[:space:]]+" "$env_file"; then
       missing+=("$key")
     fi
@@ -107,7 +107,7 @@ configure_webhook() {
   secret="$($SUDO awk -F= '$1 == "TELEGRAM_WEBHOOK_SECRET_TOKEN" { print substr($0, index($0, "=") + 1) }' "$env_file")"
   domain="$($SUDO awk -F= '$1 == "DOMAIN" { print substr($0, index($0, "=") + 1) }' "$env_file")"
 
-  log "Configurando el webhook de Telegram."
+  log "Configurando el webhook de Telegram (message + callback_query)."
   curl --fail-with-body --silent --show-error \
     -X POST "https://api.telegram.org/bot${token}/setWebhook" \
     -H 'Content-Type: application/json' \
@@ -125,6 +125,7 @@ Deploy terminado.
 
 Aplicación: $APP_DIR
 URL pública: https://$domain
+Base SQLite: $APP_DIR/data/finanzas.db
 
 Comandos útiles:
   cd $APP_DIR
@@ -135,12 +136,15 @@ Comandos útiles:
 
 Backup SQLite y estado del agente:
   sudo mkdir -p /var/backups
-  sudo tar -C $APP_DIR -czf /var/backups/calorito-$backup_date.tar.gz data workflow-data
+  sudo tar -C $APP_DIR -czf /var/backups/finanzas-agent-$backup_date.tar.gz data workflow-data
 
 Importante:
   - Abrí únicamente los puertos 22, 80 y 443 en el firewall/proveedor.
   - Conservá una copia segura de $APP_DIR/.env.
   - Caddy administra los certificados HTTPS automáticamente para DOMAIN.
+  - Si ya hay otro Caddy usando 80/443 en este servidor, no levantes el servicio
+    caddy de este compose; agregá el subdominio al Caddy existente.
+  - Registrá el bot con /start <ACCESS_CODE> antes de usarlo.
 EOF
 }
 

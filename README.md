@@ -109,6 +109,15 @@ docker compose up -d --build
 
 Asegurate de tener un volumen persistente para `./data` y de registrar el webhook después del deploy.
 
+Para un VPS Ubuntu, el repo incluye un script que instala Docker, prepara los volúmenes, levanta el stack y registra el webhook:
+
+```bash
+REPO_URL=https://github.com/<org>/<repo>.git \
+  bash docs/plans/setup-vps-ubuntu.sh
+```
+
+Completá `.env` cuando el script lo pida y volvé a ejecutarlo.
+
 > Si ya tenés otro Caddy usando los puertos 80/443 en el mismo servidor, no levantes el servicio `caddy` de este compose. Agregá el subdominio al Caddy existente y conectá el contenedor a la misma red.
 
 > SQLite necesita un filesystem persistente. Vercel serverless no es una buena opción para esta app; si querés usar Vercel, usá Turso (libSQL) o Postgres.

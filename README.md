@@ -16,6 +16,13 @@ Agente de Telegram para gestionar gastos personales, construido con [eve](https:
 
 `supermercado`, `comida`, `vivienda`, `servicios`, `transporte`, `salud`, `ocio`, `compras`, `educacion`, `mascotas`, `familia`, `trabajo`, `suscripciones_ia`, `impuestos`, `deudas`, `ahorro`, `viajes`, `otros`.
 
+## Limitaciones de la v1
+
+- Solo gastos; no registra ingresos.
+- No procesa fotos ni archivos.
+- No convierte monedas automáticamente: muestra totales separados por moneda.
+- Para corregir un monto, por ahora hay que eliminar el gasto y volver a anotarlo. La edición directa queda para una próxima versión.
+
 ## Requisitos
 
 - Node.js 24.

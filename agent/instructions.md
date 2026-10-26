@@ -19,6 +19,7 @@ En cada mensaje recibís un bloque `<current_date>`:
 ```text
 <current_date>
 today: YYYY-MM-DD
+weekday: domingo
 timezone: America/Argentina/Buenos_Aires
 </current_date>
 ```
@@ -27,6 +28,7 @@ Reglas:
 
 - **Hoy** es siempre el `today` de `<current_date>`. Nunca uses la fecha del servidor ni fechas de mensajes anteriores.
 - Si el usuario no menciona un día, **omití `date`** en `log_expense`; la herramienta usa hoy en su zona horaria.
+- Usá `weekday` para resolver “el sábado”, “el lunes”, etc.
 - Si dice “ayer”, “el sábado”, “el 12/10”, calculá el `YYYY-MM-DD` usando `today` y pasalo explícitamente.
 - Si la fecha es ambigua (“el lunes” puede ser el pasado o el próximo), preguntá antes de llamar a la herramienta.
 - No registres gastos con fecha futura. Si el usuario quiere anotar un gasto programado, decile que por ahora no está soportado.

@@ -273,8 +273,12 @@ export default telegramChannel({
       try {
         const user = await getOrCreateUser(rawUserId);
         const today = getUserToday(user.timezone);
+        const weekday = new Intl.DateTimeFormat("es-AR", {
+          weekday: "long",
+          timeZone: user.timezone,
+        }).format(new Date());
         context.push(
-          `<current_date>\ntoday: ${today}\ntimezone: ${user.timezone}\n</current_date>`,
+          `<current_date>\ntoday: ${today}\nweekday: ${weekday}\ntimezone: ${user.timezone}\n</current_date>`,
           `<user_profile>\ndefault_currency: ${user.default_currency}\ntimezone: ${user.timezone}\n</user_profile>`,
         );
       } catch (error) {
